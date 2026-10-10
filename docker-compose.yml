@@ -1,4 +1,5 @@
-﻿services:
+﻿name: cloudstorageapi
+services:
   db:
     image: postgres:17
     container_name: cloudstorage-postgres
