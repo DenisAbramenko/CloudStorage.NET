@@ -1,4 +1,4 @@
-﻿using CloudStorage.API.Models;
+﻿using CloudStorage.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudStorage.API.Controllers;
@@ -7,13 +7,11 @@ namespace CloudStorage.API.Controllers;
 [Route("api/files")]
 public class FilesController : ControllerBase
 {
-    private readonly AppDbContext _dbContext;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorageService;
 
-    public FilesController(AppDbContext dbContext, IWebHostEnvironment environment)
+    public FilesController(IFileStorageService fileStorageService)
     {
-        _dbContext = dbContext;
-        _environment = environment;
+        _fileStorageService = fileStorageService;
     }
 
     [HttpPost]
@@ -26,50 +24,7 @@ public class FilesController : ControllerBase
             return BadRequest(new { message = "Файл не выбран или он пуст." });
         }
 
-        var uploadDirectory = Path.Combine(_environment.ContentRootPath, "App_Data", "Uploads");
-
-        Directory.CreateDirectory(uploadDirectory);
-
-        var storageKey = Guid.NewGuid().ToString("N");
-        var filePath = Path.Combine(uploadDirectory, storageKey);
-
-        var storedFile = new StoredFile
-        {
-            Id = Guid.NewGuid(),
-            FileName = Path.GetFileName(file.FileName),
-            StorageKey = storageKey,
-            ContentType = string.IsNullOrWhiteSpace(file.ContentType)
-                ? "application/octet-stream"
-                : file.ContentType,
-            Size = file.Length,
-            CreatedAtUtc = DateTime.UtcNow
-        };
-
-        try
-        {
-            await using (var stream = new FileStream(
-                             filePath,
-                             FileMode.CreateNew,
-                             FileAccess.Write,
-                             FileShare.None,
-                             bufferSize: 81920,
-                             useAsync: true))
-            {
-                await file.CopyToAsync(stream, cancellationToken);
-            }
-
-            _dbContext.StoredFiles.Add(storedFile);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch
-        {
-            if (System.IO.File.Exists(filePath))
-            {
-                System.IO.File.Delete(filePath);
-            }
-
-            throw;
-        }
+        var storedFile  = await _fileStorageService.UploadAsync(file, cancellationToken);
 
         return StatusCode(StatusCodes.Status201Created, new
         {
