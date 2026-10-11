@@ -1,4 +1,5 @@
 ﻿using CloudStorage.API.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CloudStorage.API.Services;
 
@@ -57,5 +58,12 @@ public class FileStorageService : IFileStorageService
 
             throw;
         }
+    }
+
+    public async Task<List<StoredFile>> GetAllFiles(CancellationToken cancellationToken)
+    {
+        return await _dbContext.StoredFiles
+            .OrderByDescending(file => file.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
     }
 }
