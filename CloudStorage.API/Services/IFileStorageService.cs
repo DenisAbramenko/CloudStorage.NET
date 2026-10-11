@@ -1,4 +1,5 @@
-﻿using CloudStorage.API.Models;
+﻿using CloudStorage.API.DTOs;
+using CloudStorage.API.Models;
 
 namespace CloudStorage.API.Services;
 

@@ -1,4 +1,6 @@
-﻿using CloudStorage.API.Services;
+﻿using CloudStorage.API.DTOs;
+using CloudStorage.API.Models;
+using CloudStorage.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudStorage.API.Controllers;
@@ -26,28 +28,26 @@ public class FilesController : ControllerBase
 
         var storedFile = await _fileStorageService.UploadAsync(file, cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, new
-        {
-            storedFile.Id,
-            storedFile.FileName,
-            storedFile.ContentType,
-            storedFile.Size,
-            storedFile.CreatedAtUtc
-        });
+        return StatusCode(StatusCodes.Status201Created, ToDto(storedFile));
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAllFiles(CancellationToken cancellationToken)
     {
         var files = await _fileStorageService.GetAllFiles(cancellationToken);
-        var result = files.Select(file => new
-        {
-            file.Id,
-            file.FileName,
-            file.ContentType,
-            file.Size,
-            file.CreatedAtUtc
-        });
+        var result = files.Select(ToDto);
         return Ok(result);
+    }
+
+    private StoredFileDto ToDto(StoredFile file)
+    {
+        return new StoredFileDto
+        {
+            Id = file.Id,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            Size = file.Size,
+            CreatedAtUtc = file.CreatedAtUtc
+        };
     }
 }
