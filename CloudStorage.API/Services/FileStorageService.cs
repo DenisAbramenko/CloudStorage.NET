@@ -1,4 +1,5 @@
 ﻿using CloudStorage.API.Models;
+using CloudStorage.API.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CloudStorage.API.Services;
@@ -6,12 +7,12 @@ namespace CloudStorage.API.Services;
 public class FileStorageService : IFileStorageService
 {
     private readonly IWebHostEnvironment _environment;
-    private readonly AppDbContext _dbContext;
+    private readonly IStoredFileRepository _storedFileRepository;
 
-    public FileStorageService(IWebHostEnvironment environment, AppDbContext dbContext)
+    public FileStorageService(IWebHostEnvironment environment, IStoredFileRepository storedFileRepository)
     {
         _environment = environment;
-        _dbContext = dbContext;
+        _storedFileRepository = storedFileRepository;
     }
 
     public async Task<StoredFile> UploadAsync(IFormFile? file, CancellationToken cancellationToken)
@@ -45,8 +46,7 @@ public class FileStorageService : IFileStorageService
                 await file.CopyToAsync(stream, cancellationToken);
             }
 
-            _dbContext.StoredFiles.Add(storedFile);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _storedFileRepository.AddAsync(storedFile, cancellationToken);
             return storedFile;
         }
         catch
@@ -62,8 +62,6 @@ public class FileStorageService : IFileStorageService
 
     public async Task<List<StoredFile>> GetAllFiles(CancellationToken cancellationToken)
     {
-        return await _dbContext.StoredFiles
-            .OrderByDescending(file => file.CreatedAtUtc)
-            .ToListAsync(cancellationToken);
+        return await _storedFileRepository.GetAllAsync(cancellationToken);
     }
 }
