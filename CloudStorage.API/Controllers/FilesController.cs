@@ -19,7 +19,7 @@ public class FilesController : ControllerBase
     [HttpPost]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(100 * 1024 * 1024)]
-    public async Task<IActionResult> UploadFile([FromForm] IFormFile? file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadFile(IFormFile? file, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
         {
