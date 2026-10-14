@@ -1,6 +1,7 @@
 using CloudStorage.API;
 using CloudStorage.API.Repositories;
 using CloudStorage.API.Services;
+using CloudStorage.API.Services.FileSystem;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
     builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IStoredFileRepository, StoredFileRepository>();
+builder.Services.AddScoped<ILocalFileStorage, LocalFileStorage>();
 
 var app = builder.Build();
 
