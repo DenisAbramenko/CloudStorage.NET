@@ -1,25 +1,23 @@
 ﻿using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
+using CloudStorage.API.Services.FileSystem;
 
 namespace CloudStorage.API.Services;
 
 public class FileStorageService : IFileStorageService
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly ILocalFileStorage _localFileStorage;
     private readonly IStoredFileRepository _storedFileRepository;
 
-    public FileStorageService(IWebHostEnvironment environment, IStoredFileRepository storedFileRepository)
+    public FileStorageService(IStoredFileRepository storedFileRepository, ILocalFileStorage localFileStorage)
     {
-        _environment = environment;
         _storedFileRepository = storedFileRepository;
+        _localFileStorage = localFileStorage;
     }
 
     public async Task<StoredFile> UploadAsync(IFormFile? file, CancellationToken cancellationToken)
     {
-        var uploadDirectory = Path.Combine(_environment.ContentRootPath, "App_Data", "Uploads");
-        Directory.CreateDirectory(uploadDirectory);
         var storageKey = Guid.NewGuid().ToString("N");
-        var filePath = Path.Combine(uploadDirectory, storageKey);
         var storedFile = new StoredFile
         {
             Id = Guid.NewGuid(),
@@ -34,26 +32,13 @@ public class FileStorageService : IFileStorageService
 
         try
         {
-            await using (var stream = new FileStream(
-                             filePath,
-                             FileMode.CreateNew,
-                             FileAccess.Write,
-                             FileShare.None,
-                             bufferSize: 81920,
-                             useAsync: true))
-            {
-                await file.CopyToAsync(stream, cancellationToken);
-            }
-
+            await _localFileStorage.Save(storageKey, file.OpenReadStream(), cancellationToken);
             await _storedFileRepository.AddAsync(storedFile, cancellationToken);
             return storedFile;
         }
         catch
         {
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
+            if (_localFileStorage.Exists(storageKey)) _localFileStorage.Delete(storageKey);
 
             throw;
         }

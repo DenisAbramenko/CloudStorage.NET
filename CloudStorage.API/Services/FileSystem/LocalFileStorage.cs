@@ -4,23 +4,22 @@ public class LocalFileStorage : ILocalFileStorage
 {
     private readonly string _uploadDirectory;
 
-
     public LocalFileStorage(IWebHostEnvironment environment)
     {
         _uploadDirectory = Path.Combine(environment.ContentRootPath, "App_Data", "Uploads");
         Directory.CreateDirectory(_uploadDirectory);
     }
 
-
     public async Task Save(string storageKey, Stream content, CancellationToken cancellationToken)
     {
         var filePath = GetFilePath(storageKey);
-        await using var fileStream = new FileStream(filePath,
+        await using var fileStream = new FileStream(
+            filePath,
             FileMode.Create,
             FileAccess.Write,
             FileShare.Read,
-            bufferSize: 81920,
-            useAsync: true);
+            81920,
+            true);
         await content.CopyToAsync(fileStream, cancellationToken);
     }
 
@@ -32,8 +31,8 @@ public class LocalFileStorage : ILocalFileStorage
             FileMode.Open,
             FileAccess.Read,
             FileShare.Read,
-            bufferSize: 81920,
-            useAsync: true);
+            81920,
+            true);
         return Task.FromResult<Stream?>(fileStream);
     }
 
