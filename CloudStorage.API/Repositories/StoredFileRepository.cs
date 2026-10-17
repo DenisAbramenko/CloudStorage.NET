@@ -25,4 +25,11 @@ public class StoredFileRepository : IStoredFileRepository
             .OrderByDescending(file => file.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<StoredFile?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await _dbContext.StoredFiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(file => file.Id == id, cancellationToken);
+    }
 }

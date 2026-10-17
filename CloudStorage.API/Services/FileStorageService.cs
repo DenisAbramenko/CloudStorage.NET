@@ -1,4 +1,5 @@
-﻿using CloudStorage.API.Models;
+﻿using CloudStorage.API.DTOs;
+using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
 using CloudStorage.API.Services.FileSystem;
 
@@ -47,5 +48,21 @@ public class FileStorageService : IFileStorageService
     public async Task<List<StoredFile>> GetAllFiles(CancellationToken cancellationToken)
     {
         return await _storedFileRepository.GetAllAsync(cancellationToken);
+    }
+
+    public async Task<FileDownloadResult?> DownloadAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
+        if (storedFile == null) return null;
+        if (!_localFileStorage.Exists(storedFile.StorageKey))
+            throw new FileNotFoundException("Файл отсутствует на диске.");
+        var fileStream = await _localFileStorage.OpenRead(storedFile.StorageKey);
+        if (fileStream == null) return null;
+        return new FileDownloadResult
+        {
+            Content = fileStream,
+            FileName = storedFile.FileName,
+            ContentType = storedFile.ContentType
+        };
     }
 }

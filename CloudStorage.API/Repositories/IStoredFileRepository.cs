@@ -7,4 +7,5 @@ public interface IStoredFileRepository
     Task AddAsync(StoredFile file, CancellationToken cancellationToken);
 
     Task<List<StoredFile>> GetAllAsync(CancellationToken cancellationToken);
+    Task<StoredFile?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 }
