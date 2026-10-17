@@ -8,4 +8,5 @@ public interface IStoredFileRepository
 
     Task<List<StoredFile>> GetAllAsync(CancellationToken cancellationToken);
     Task<StoredFile?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    void Delete(StoredFile file);
 }

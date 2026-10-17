@@ -32,4 +32,10 @@ public class StoredFileRepository : IStoredFileRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(file => file.Id == id, cancellationToken);
     }
+
+    public void Delete(StoredFile file)
+    {
+        _dbContext.Remove(file);
+        _dbContext.SaveChanges();
+    }
 }

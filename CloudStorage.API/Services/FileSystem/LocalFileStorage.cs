@@ -43,7 +43,8 @@ public class LocalFileStorage : ILocalFileStorage
 
     public void Delete(string storageKey)
     {
-        File.Delete(GetFilePath(storageKey));
+        var filePath = GetFilePath(storageKey);
+        File.Delete(filePath);
     }
 
     private string GetFilePath(string storageKey)

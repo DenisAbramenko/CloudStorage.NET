@@ -18,6 +18,7 @@ public class FileStorageService : IFileStorageService
 
     public async Task<StoredFile> UploadAsync(IFormFile? file, CancellationToken cancellationToken)
     {
+        if (file == null) throw new ArgumentNullException(nameof(file));
         var storageKey = Guid.NewGuid().ToString("N");
         var storedFile = new StoredFile
         {
@@ -64,5 +65,13 @@ public class FileStorageService : IFileStorageService
             FileName = storedFile.FileName,
             ContentType = storedFile.ContentType
         };
+    }
+
+    public async Task DeleteFile(Guid id, CancellationToken cancellationToken)
+    {
+        var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
+        if (storedFile == null) throw new FileNotFoundException("Файл отсутствует на диске.");
+        _localFileStorage.Delete(storedFile.StorageKey);
+        _storedFileRepository.Delete(storedFile);
     }
 }
