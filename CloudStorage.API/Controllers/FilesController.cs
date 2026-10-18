@@ -52,8 +52,8 @@ public class FilesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteFile(Guid id, CancellationToken cancellationToken)
     {
-        await _fileStorageService.DeleteFile(id, cancellationToken);
-        return Ok();
+        await _fileStorageService.DeleteById(id, cancellationToken);
+        return NoContent();
     }
 
     private StoredFileDto ToDto(StoredFile file)

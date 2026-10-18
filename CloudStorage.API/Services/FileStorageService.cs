@@ -67,7 +67,7 @@ public class FileStorageService : IFileStorageService
         };
     }
 
-    public async Task DeleteFile(Guid id, CancellationToken cancellationToken)
+    public async Task DeleteById(Guid id, CancellationToken cancellationToken)
     {
         var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
         if (storedFile == null) throw new FileNotFoundException("Файл отсутствует на диске.");
