@@ -29,7 +29,8 @@ public class FileStorageService : IFileStorageService
                 ? "application/octet-stream"
                 : file.ContentType,
             Size = file.Length,
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = DateTime.UtcNow,
+            UserId = Guid.NewGuid().ToString()
         };
 
         try

@@ -1,7 +1,9 @@
 using CloudStorage.API;
+using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
 using CloudStorage.API.Services;
 using CloudStorage.API.Services.FileSystem;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +15,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
     builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services
+    .AddIdentityCore<ApplicationUser>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IStoredFileRepository, StoredFileRepository>();
 builder.Services.AddScoped<ILocalFileStorage, LocalFileStorage>();
