@@ -13,6 +13,6 @@ public class StoredFile
     public long Size { get; set; }
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
-    
+
     public required string UserId { get; set; } = string.Empty;
 }

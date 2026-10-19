@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
-var secretKey = String.IsNullOrWhiteSpace(builder.Configuration["Jwt:Secret"])
-                ? throw new InvalidOperationException("JWT SecretKey is not configured.")
-                : builder.Configuration["Jwt:Secret"];
+var secretKey = string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Secret"])
+    ? throw new InvalidOperationException("JWT SecretKey is not configured.")
+    : builder.Configuration["Jwt:Secret"];
 
 // Add services to the container.
 
@@ -35,12 +35,13 @@ builder.Services
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters.ValidateIssuer = true;
-        options.TokenValidationParameters.ValidIssuer  = builder.Configuration["Jwt:Issuer"];
+        options.TokenValidationParameters.ValidIssuer = builder.Configuration["Jwt:Issuer"];
         options.TokenValidationParameters.ValidateAudience = true;
         options.TokenValidationParameters.ValidAudience = builder.Configuration["Jwt:Audience"];
         options.TokenValidationParameters.ValidateIssuerSigningKey = true;
-        options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-        options.TokenValidationParameters.ValidateLifetime  = true;
+        options.TokenValidationParameters.IssuerSigningKey =
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        options.TokenValidationParameters.ValidateLifetime = true;
     });
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IStoredFileRepository, StoredFileRepository>();
