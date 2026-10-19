@@ -1,12 +1,18 @@
+using System.Text;
 using CloudStorage.API;
 using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
 using CloudStorage.API.Services;
 using CloudStorage.API.Services.FileSystem;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+var secretKey = String.IsNullOrWhiteSpace(builder.Configuration["Jwt:Secret"])
+                ? throw new InvalidOperationException("JWT SecretKey is not configured.")
+                : builder.Configuration["Jwt:Secret"];
 
 // Add services to the container.
 
@@ -20,6 +26,22 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidIssuer  = builder.Configuration["Jwt:Issuer"];
+        options.TokenValidationParameters.ValidateAudience = true;
+        options.TokenValidationParameters.ValidAudience = builder.Configuration["Jwt:Audience"];
+        options.TokenValidationParameters.ValidateIssuerSigningKey = true;
+        options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        options.TokenValidationParameters.ValidateLifetime  = true;
+    });
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IStoredFileRepository, StoredFileRepository>();
 builder.Services.AddScoped<ILocalFileStorage, LocalFileStorage>();
@@ -33,6 +55,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/api/health/db", async (AppDbContext db) =>
 {
