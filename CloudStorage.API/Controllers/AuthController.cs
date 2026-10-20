@@ -26,7 +26,7 @@ public class AuthController : ControllerBase
         if (!result.Succeeded) return BadRequest(result.Errors);
         return Ok("User register successfully");
     }
-    
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
