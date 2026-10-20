@@ -26,4 +26,14 @@ public class AuthController : ControllerBase
         if (!result.Succeeded) return BadRequest(result.Errors);
         return Ok("User register successfully");
     }
+    
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null) return Unauthorized("Invalid email");
+        var resultPassword = await _userManager.CheckPasswordAsync(user, request.Password);
+        if (!resultPassword) return Unauthorized("Invalid password");
+        return Ok("User login successfully");
+    }
 }
