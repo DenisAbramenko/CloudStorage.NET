@@ -3,6 +3,7 @@ using CloudStorage.API;
 using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
 using CloudStorage.API.Services;
+using CloudStorage.API.Services.Auth;
 using CloudStorage.API.Services.FileSystem;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -40,12 +41,13 @@ builder.Services
         options.TokenValidationParameters.ValidAudience = builder.Configuration["Jwt:Audience"];
         options.TokenValidationParameters.ValidateIssuerSigningKey = true;
         options.TokenValidationParameters.IssuerSigningKey =
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey ?? string.Empty));
         options.TokenValidationParameters.ValidateLifetime = true;
     });
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IStoredFileRepository, StoredFileRepository>();
 builder.Services.AddScoped<ILocalFileStorage, LocalFileStorage>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var app = builder.Build();
 
