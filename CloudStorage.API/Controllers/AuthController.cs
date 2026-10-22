@@ -1,6 +1,7 @@
 ﻿using CloudStorage.API.DTOs;
 using CloudStorage.API.Models;
 using CloudStorage.API.Services.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,5 +40,12 @@ public class AuthController : ControllerBase
         if (!resultPassword) return Unauthorized("Invalid password");
         var token = _jwtTokenService.GenerateAccessToken(user);
         return Ok(new { access_token = token });
+    }
+    
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        return Ok(User.Identity?.Name);
     }
 }
