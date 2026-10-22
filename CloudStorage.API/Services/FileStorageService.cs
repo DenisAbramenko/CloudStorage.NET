@@ -16,7 +16,7 @@ public class FileStorageService : IFileStorageService
         _localFileStorage = localFileStorage;
     }
 
-    public async Task<StoredFile> UploadAsync(IFormFile? file, CancellationToken cancellationToken)
+    public async Task<StoredFile> UploadAsync(IFormFile? file, string userId, CancellationToken cancellationToken)
     {
         if (file == null) throw new ArgumentNullException(nameof(file));
         var storageKey = Guid.NewGuid().ToString("N");
@@ -30,7 +30,7 @@ public class FileStorageService : IFileStorageService
                 : file.ContentType,
             Size = file.Length,
             CreatedAtUtc = DateTime.UtcNow,
-            UserId = Guid.NewGuid().ToString()
+            UserId = userId
         };
 
         try
@@ -47,12 +47,12 @@ public class FileStorageService : IFileStorageService
         }
     }
 
-    public async Task<List<StoredFile>> GetAllFiles(CancellationToken cancellationToken)
+    public async Task<List<StoredFile>> GetAllFiles(string userId, CancellationToken cancellationToken)
     {
         return await _storedFileRepository.GetAllAsync(cancellationToken);
     }
 
-    public async Task<FileDownloadResult?> DownloadAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<FileDownloadResult?> DownloadAsync(string userId, Guid id, CancellationToken cancellationToken)
     {
         var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
         if (storedFile == null) return null;
@@ -68,7 +68,7 @@ public class FileStorageService : IFileStorageService
         };
     }
 
-    public async Task DeleteById(Guid id, CancellationToken cancellationToken)
+    public async Task DeleteById(string userId, Guid id, CancellationToken cancellationToken)
     {
         var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
         if (storedFile == null) throw new FileNotFoundException("Файл отсутствует на диске.");
