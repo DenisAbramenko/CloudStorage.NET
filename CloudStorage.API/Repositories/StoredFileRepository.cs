@@ -35,9 +35,9 @@ public class StoredFileRepository : IStoredFileRepository
             .FirstOrDefaultAsync(file => file.Id == id, cancellationToken);
     }
 
-    public void Delete(StoredFile file)
+    public async Task Delete(StoredFile file, CancellationToken cancellationToken)
     {
         _dbContext.Remove(file);
-        _dbContext.SaveChanges();
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
