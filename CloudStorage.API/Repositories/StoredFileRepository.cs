@@ -18,18 +18,20 @@ public class StoredFileRepository : IStoredFileRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<List<StoredFile>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<List<StoredFile>> GetAllAsync(string userId, CancellationToken cancellationToken)
     {
         return await _dbContext.StoredFiles
             .AsNoTracking()
+            .Where(file => file.UserId == userId)
             .OrderByDescending(file => file.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<StoredFile?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<StoredFile?> GetByIdAsync(string userId, Guid id, CancellationToken cancellationToken)
     {
         return await _dbContext.StoredFiles
             .AsNoTracking()
+            .Where(file => file.UserId == userId)
             .FirstOrDefaultAsync(file => file.Id == id, cancellationToken);
     }
 

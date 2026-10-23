@@ -49,12 +49,12 @@ public class FileStorageService : IFileStorageService
 
     public async Task<List<StoredFile>> GetAllFiles(string userId, CancellationToken cancellationToken)
     {
-        return await _storedFileRepository.GetAllAsync(cancellationToken);
+        return await _storedFileRepository.GetAllAsync(userId, cancellationToken);
     }
 
     public async Task<FileDownloadResult?> DownloadAsync(string userId, Guid id, CancellationToken cancellationToken)
     {
-        var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
+        var storedFile = await _storedFileRepository.GetByIdAsync(userId, id, cancellationToken);
         if (storedFile == null) return null;
         if (!_localFileStorage.Exists(storedFile.StorageKey))
             throw new FileNotFoundException("Файл отсутствует на диске.");
@@ -70,7 +70,7 @@ public class FileStorageService : IFileStorageService
 
     public async Task DeleteById(string userId, Guid id, CancellationToken cancellationToken)
     {
-        var storedFile = await _storedFileRepository.GetByIdAsync(id, cancellationToken);
+        var storedFile = await _storedFileRepository.GetByIdAsync(userId, id, cancellationToken);
         if (storedFile == null) throw new FileNotFoundException("Файл отсутствует на диске.");
         _localFileStorage.Delete(storedFile.StorageKey);
         _storedFileRepository.Delete(storedFile);
