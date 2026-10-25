@@ -32,10 +32,11 @@ public class FileStorageService : IFileStorageService
             CreatedAtUtc = DateTime.UtcNow,
             UserId = userId
         };
+        await using var content = file.OpenReadStream();
 
         try
         {
-            await _localFileStorage.Save(storageKey, file.OpenReadStream(), cancellationToken);
+            await _localFileStorage.Save(storageKey, content, cancellationToken);
             await _storedFileRepository.AddAsync(storedFile, cancellationToken);
             return storedFile;
         }
