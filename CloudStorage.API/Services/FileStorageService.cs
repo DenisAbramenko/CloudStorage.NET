@@ -58,7 +58,7 @@ public class FileStorageService : IFileStorageService
         if (storedFile == null) return null;
         if (!_localFileStorage.Exists(storedFile.StorageKey))
             throw new FileNotFoundException("Файл отсутствует на диске.");
-        var fileStream = await _localFileStorage.OpenRead(storedFile.StorageKey);
+        var fileStream = _localFileStorage.OpenRead(storedFile.StorageKey);
         if (fileStream == null) return null;
         return new FileDownloadResult
         {
@@ -71,7 +71,7 @@ public class FileStorageService : IFileStorageService
     public async Task DeleteById(string userId, Guid id, CancellationToken cancellationToken)
     {
         var storedFile = await _storedFileRepository.GetByIdAsync(userId, id, cancellationToken);
-        if (storedFile == null) throw new FileNotFoundException("Файл отсутствует на диске.");
+        if (storedFile == null) throw new FileNotFoundException("Файл не найден");
         _localFileStorage.Delete(storedFile.StorageKey);
         await _storedFileRepository.Delete(storedFile, cancellationToken);
     }

@@ -23,7 +23,7 @@ public class LocalFileStorage : ILocalFileStorage
         await content.CopyToAsync(fileStream, cancellationToken);
     }
 
-    public Task<Stream?> OpenRead(string storageKey)
+    public Stream? OpenRead(string storageKey)
     {
         var filePath = GetFilePath(storageKey);
         var fileStream = new FileStream(
@@ -33,7 +33,7 @@ public class LocalFileStorage : ILocalFileStorage
             FileShare.Read,
             81920,
             true);
-        return Task.FromResult<Stream?>(fileStream);
+        return fileStream;
     }
 
     public bool Exists(string storageKey)

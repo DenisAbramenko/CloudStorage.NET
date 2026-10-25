@@ -4,7 +4,7 @@ public interface ILocalFileStorage
 {
     Task Save(string storageKey, Stream content, CancellationToken cancellationToken);
 
-    Task<Stream?> OpenRead(string storageKey);
+    Stream? OpenRead(string storageKey);
 
     bool Exists(string storageKey);
 
