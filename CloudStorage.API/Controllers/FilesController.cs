@@ -58,7 +58,8 @@ public class FilesController : ControllerBase
     public async Task<IActionResult> DeleteFile(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        await _fileStorageService.DeleteById(userId, id, cancellationToken);
+        var result = await _fileStorageService.DeleteById(userId, id, cancellationToken);
+        if (!result) return NotFound();
         return NoContent();
     }
 
@@ -73,7 +74,7 @@ public class FilesController : ControllerBase
             CreatedAtUtc = file.CreatedAtUtc
         };
     }
-    
+
     private string GetCurrentUserId()
     {
         return User.FindFirstValue(ClaimTypes.NameIdentifier)

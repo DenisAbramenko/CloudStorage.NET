@@ -69,11 +69,12 @@ public class FileStorageService : IFileStorageService
         };
     }
 
-    public async Task DeleteById(string userId, Guid id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteById(string userId, Guid id, CancellationToken cancellationToken)
     {
         var storedFile = await _storedFileRepository.GetByIdAsync(userId, id, cancellationToken);
-        if (storedFile == null) throw new FileNotFoundException("Файл не найден");
+        if (storedFile == null) return false;
         _localFileStorage.Delete(storedFile.StorageKey);
         await _storedFileRepository.Delete(storedFile, cancellationToken);
+        return true;
     }
 }
