@@ -1,4 +1,5 @@
-﻿name: cloudstorageapi
+name: cloudstorageapi
+
 services:
   db:
     image: postgres:17
@@ -12,11 +13,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U admin -d cloudstorage" ]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloudstorage-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Secret: ${JWT_SECRET:?JWT_SECRET не задан в .env}
+      Storage__RootPath: /app/App_Data/Uploads
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/app/App_Data/Uploads
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  uploads:
