@@ -8,6 +8,17 @@
 
 **/bin/
 **/obj/
+publish/
+
+# Runtime data
+
+CloudStorage.API/App_Data/Uploads/
+
+# Test artifacts
+
+TestResults/
+*.trx
+coverage.*
 
 # Rider / JetBrains
 
