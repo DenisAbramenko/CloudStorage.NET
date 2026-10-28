@@ -5,6 +5,7 @@ using CloudStorage.API.Repositories;
 using CloudStorage.API.Services;
 using CloudStorage.API.Services.Auth;
 using CloudStorage.API.Services.FileSystem;
+using CloudStorage.API.Services.Mapping;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,7 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IStoredFileRepository, StoredFileRepository>();
 builder.Services.AddScoped<ILocalFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IStoredFileMapper, StoredFileMapper>();
 
 var app = builder.Build();
 

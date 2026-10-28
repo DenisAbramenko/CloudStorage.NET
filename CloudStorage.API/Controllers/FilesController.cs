@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
-using CloudStorage.API.DTOs;
-using CloudStorage.API.Models;
 using CloudStorage.API.Services;
+using CloudStorage.API.Services.Mapping;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,10 +12,12 @@ namespace CloudStorage.API.Controllers;
 public class FilesController : ControllerBase
 {
     private readonly IFileStorageService _fileStorageService;
+    private readonly IStoredFileMapper _storedFileMapper;
 
-    public FilesController(IFileStorageService fileStorageService)
+    public FilesController(IFileStorageService fileStorageService, IStoredFileMapper storedFileMapper)
     {
         _fileStorageService = fileStorageService;
+        _storedFileMapper = storedFileMapper;
     }
 
     [HttpPost]
@@ -28,7 +29,7 @@ public class FilesController : ControllerBase
         var userId = GetCurrentUserId();
         var storedFile = await _fileStorageService.UploadAsync(file, userId, cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, ToDto(storedFile));
+        return StatusCode(StatusCodes.Status201Created, _storedFileMapper.ToDto(storedFile));
     }
 
     [HttpGet]
@@ -36,7 +37,7 @@ public class FilesController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var files = await _fileStorageService.GetAllFiles(userId, cancellationToken);
-        var result = files.Select(ToDto);
+        var result = _storedFileMapper.ToDtoList(files);
         return Ok(result);
     }
 
@@ -61,18 +62,6 @@ public class FilesController : ControllerBase
         var result = await _fileStorageService.DeleteById(userId, id, cancellationToken);
         if (!result) return NotFound();
         return NoContent();
-    }
-
-    private StoredFileDto ToDto(StoredFile file)
-    {
-        return new StoredFileDto
-        {
-            Id = file.Id,
-            FileName = file.FileName,
-            ContentType = file.ContentType,
-            Size = file.Size,
-            CreatedAtUtc = file.CreatedAtUtc
-        };
     }
 
     private string GetCurrentUserId()
