@@ -109,7 +109,7 @@ public class FileStorageServiceTests
         var result = await _sut.DownloadAsync("user-1", storedFile.Id, CancellationToken.None);
 
         Assert.NotNull(result);
-        Assert.Equal(storedFile.FileName, result.FileName);
+        Assert.Equal(storedFile.FileName, result!.FileName);
         Assert.Equal(storedFile.ContentType, result.ContentType);
         using var reader = new MemoryStream();
         await result.Content.CopyToAsync(reader);

@@ -4,9 +4,12 @@ public class LocalFileStorage : ILocalFileStorage
 {
     private readonly string _uploadDirectory;
 
-    public LocalFileStorage(IWebHostEnvironment environment)
+    public LocalFileStorage(IWebHostEnvironment environment, IConfiguration configuration)
     {
-        _uploadDirectory = Path.Combine(environment.ContentRootPath, "App_Data", "Uploads");
+        var configuredRoot = configuration["Storage:RootPath"];
+        _uploadDirectory = string.IsNullOrWhiteSpace(configuredRoot)
+            ? Path.Combine(environment.ContentRootPath, "App_Data", "Uploads")
+            : Path.GetFullPath(configuredRoot, environment.ContentRootPath);
         Directory.CreateDirectory(_uploadDirectory);
     }
 
