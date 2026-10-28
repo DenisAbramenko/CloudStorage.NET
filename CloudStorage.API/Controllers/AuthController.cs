@@ -26,7 +26,12 @@ public class AuthController : ControllerBase
         user.Email = request.Email;
         user.UserName = request.Email;
         var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded) return BadRequest(result.Errors);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors) ModelState.AddModelError("register", error.Description);
+            return ValidationProblem(ModelState);
+        }
+
         return Ok("User register successfully");
     }
 
@@ -34,10 +39,18 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null) return Unauthorized("Invalid email");
+        if (user == null) return InvalidCredentials();
         var resultPassword = await _userManager.CheckPasswordAsync(user, request.Password);
-        if (!resultPassword) return Unauthorized("Invalid password");
+        if (!resultPassword) return InvalidCredentials();
         var token = _jwtTokenService.GenerateAccessToken(user);
         return Ok(new { access_token = token });
+    }
+
+    private ObjectResult InvalidCredentials()
+    {
+        return Problem(
+            statusCode: StatusCodes.Status401Unauthorized,
+            title: "Unauthorized",
+            detail: "Неверный email или пароль.");
     }
 }

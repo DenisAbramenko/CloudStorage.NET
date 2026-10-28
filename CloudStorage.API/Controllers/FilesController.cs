@@ -25,7 +25,12 @@ public class FilesController : ControllerBase
     [RequestSizeLimit(100 * 1024 * 1024)]
     public async Task<IActionResult> UploadFile(IFormFile? file, CancellationToken cancellationToken)
     {
-        if (file is null || file.Length == 0) return BadRequest(new { message = "Файл не выбран или он пуст." });
+        if (file is null || file.Length == 0)
+        {
+            ModelState.AddModelError(nameof(file), "Файл не выбран или он пуст.");
+            return ValidationProblem(ModelState);
+        }
+
         var userId = GetCurrentUserId();
         var storedFile = await _fileStorageService.UploadAsync(file, userId, cancellationToken);
 

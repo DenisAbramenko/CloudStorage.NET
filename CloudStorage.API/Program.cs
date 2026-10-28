@@ -1,5 +1,6 @@
-using System.Text;
+﻿using System.Text;
 using CloudStorage.API;
+using CloudStorage.API.Errors;
 using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
 using CloudStorage.API.Services;
@@ -16,9 +17,13 @@ var secretKey = string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Secret"])
     ? throw new InvalidOperationException("JWT SecretKey is not configured.")
     : builder.Configuration["Jwt:Secret"];
 
-// Add services to the container.
-
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+});
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
@@ -52,6 +57,9 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IStoredFileMapper, StoredFileMapper>();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {
