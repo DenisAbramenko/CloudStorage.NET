@@ -193,4 +193,73 @@ public class FileStorageServiceTests
         Assert.Equal(1, _repository.LastQuery!.Page);
         Assert.Equal(FilesQueryParameters.DefaultPageSize, _repository.LastQuery.PageSize);
     }
+
+    [Fact]
+    public async Task GetFilesPageAsync_InvalidPaging_IsNormalizedToDefaults()
+    {
+        var query = new FilesQueryParameters { Page = 0, PageSize = 0 };
+
+        var page = await _sut.GetFilesPageAsync("user-1", query, CancellationToken.None);
+
+        Assert.Equal(1, page.Page);
+        Assert.Equal(FilesQueryParameters.DefaultPageSize, page.PageSize);
+        Assert.Equal(1, _repository.LastQuery!.Page);
+        Assert.Equal(FilesQueryParameters.DefaultPageSize, _repository.LastQuery.PageSize);
+        // Исходный объект запроса не мутируется.
+        Assert.Equal(0, query.Page);
+        Assert.Equal(0, query.PageSize);
+    }
+
+    [Fact]
+    public async Task GetFilesPageAsync_PageSizeAboveMaximum_FallsBackToDefault()
+    {
+        var query = new FilesQueryParameters { Page = 3, PageSize = FilesQueryParameters.MaxPageSize + 1 };
+
+        var page = await _sut.GetFilesPageAsync("user-1", query, CancellationToken.None);
+
+        Assert.Equal(3, page.Page);
+        Assert.Equal(FilesQueryParameters.DefaultPageSize, page.PageSize);
+    }
+
+    [Fact]
+    public async Task GetFilesPageAsync_NullSorting_UsesDefaults()
+    {
+        await _sut.GetFilesPageAsync("user-1", new FilesQueryParameters(), CancellationToken.None);
+
+        Assert.Equal(FilesQueryParameters.DefaultSortBy, _repository.LastQuery!.SortBy);
+        Assert.Equal(FilesQueryParameters.DefaultSortDirection, _repository.LastQuery.SortDirection);
+    }
+
+    [Fact]
+    public async Task GetFilesPageAsync_ExplicitSorting_IsPassedThrough()
+    {
+        var query = new FilesQueryParameters
+        {
+            Page = 2,
+            PageSize = 5,
+            SortBy = FileSortField.Size,
+            SortDirection = FileSortDirection.Asc
+        };
+
+        await _sut.GetFilesPageAsync("user-1", query, CancellationToken.None);
+
+        Assert.Equal(2, _repository.LastQuery!.Page);
+        Assert.Equal(5, _repository.LastQuery.PageSize);
+        Assert.Equal(FileSortField.Size, _repository.LastQuery.SortBy);
+        Assert.Equal(FileSortDirection.Asc, _repository.LastQuery.SortDirection);
+    }
+
+    [Fact]
+    public async Task GetFilesPageAsync_ReturnsTotalAndComputedTotalPages()
+    {
+        _repository.FilesToReturn = [CreateStoredFile(), CreateStoredFile(), CreateStoredFile()];
+
+        var page = await _sut.GetFilesPageAsync(
+            "user-1",
+            new FilesQueryParameters { Page = 2, PageSize = 2 },
+            CancellationToken.None);
+
+        Assert.Equal(3, page.Total);
+        Assert.Equal(2, page.TotalPages);
+    }
 }

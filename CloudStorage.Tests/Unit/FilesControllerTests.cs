@@ -153,6 +153,73 @@ public class FilesControllerTests
     }
 
     [Fact]
+    public async Task GetAllFiles_ValidQuery_ReturnsPagedResultWithRequestedParameters()
+    {
+        var storedFile = new StoredFile
+        {
+            Id = Guid.NewGuid(),
+            FileName = "note.txt",
+            StorageKey = "key",
+            ContentType = "text/plain",
+            Size = 5,
+            UserId = "user-1"
+        };
+        _storage.PageResult = new PagedResult<StoredFile>([storedFile], Total: 7, Page: 2, PageSize: 5);
+        var query = new FilesQueryParameters
+        {
+            Page = 2,
+            PageSize = 5,
+            SortBy = FileSortField.Name,
+            SortDirection = FileSortDirection.Asc
+        };
+        var controller = CreateController();
+
+        var result = await controller.GetAllFiles(query, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var page = Assert.IsType<PagedResult<StoredFileDto>>(ok.Value);
+        Assert.Equal(7, page.Total);
+        Assert.Equal(2, page.Page);
+        Assert.Equal(5, page.PageSize);
+        Assert.Equal(2, page.TotalPages);
+        Assert.Equal(storedFile.Id, Assert.Single(page.Items).Id);
+        Assert.Same(query, _storage.LastQuery);
+    }
+
+    [Fact]
+    public async Task GetAllFiles_EmptyPage_ReturnsEmptyItems()
+    {
+        _storage.PageResult = new PagedResult<StoredFile>([], 0, 1, FilesQueryParameters.DefaultPageSize);
+        var controller = CreateController();
+
+        var result = await controller.GetAllFiles(new FilesQueryParameters(), CancellationToken.None);
+
+        var page = Assert.IsType<PagedResult<StoredFileDto>>(
+            Assert.IsType<OkObjectResult>(result).Value);
+        Assert.Empty(page.Items);
+        Assert.Equal(0, page.Total);
+        Assert.Equal(0, page.TotalPages);
+    }
+
+    [Fact]
+    public async Task GetAllFiles_InvalidModelState_Returns400WithoutServiceCall()
+    {
+        var controller = CreateController();
+        controller.ModelState.AddModelError(
+            nameof(FilesQueryParameters.PageSize),
+            "недопустимый размер страницы");
+
+        var result = await controller.GetAllFiles(
+            new FilesQueryParameters { PageSize = 101 },
+            CancellationToken.None);
+
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+        Assert.IsType<ValidationProblemDetails>(objectResult.Value);
+        Assert.Null(_storage.LastUserId);
+    }
+
+    [Fact]
     public async Task GetAllFiles_WithoutUserIdClaim_ThrowsUnauthorizedAccessException()
     {
         var controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));

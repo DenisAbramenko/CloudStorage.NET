@@ -83,8 +83,85 @@ public class ApiIntegrationTests
 
         var listResponse = await client.GetAsync("/api/files");
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
-        var files = await listResponse.Content.ReadFromJsonAsync<List<StoredFileDto>>();
-        Assert.Contains(files!, f => f.Id == uploaded.Id);
+        var files = await listResponse.Content.ReadFromJsonAsync<PagedResult<StoredFileDto>>();
+        Assert.Contains(files!.Items, f => f.Id == uploaded.Id);
+    }
+
+    [Fact]
+    public async Task FilesList_IsPagedAndSorted()
+    {
+        using var client = await CreateAuthorizedClientAsync("paging");
+        await UploadAsync(client, "a-first.txt", "1");
+        await UploadAsync(client, "b-second.txt", "22");
+        await UploadAsync(client, "c-third.txt", "333");
+
+        var firstPage = await ReadPageAsync(client, "?page=1&pageSize=2&sortBy=name&sortDirection=asc");
+        Assert.Equal(3, firstPage.Total);
+        Assert.Equal(2, firstPage.TotalPages);
+        Assert.Equal(1, firstPage.Page);
+        Assert.Equal(2, firstPage.PageSize);
+        Assert.Equal(["a-first.txt", "b-second.txt"], firstPage.Items.Select(file => file.FileName));
+
+        var secondPage = await ReadPageAsync(client, "?page=2&pageSize=2&sortBy=name&sortDirection=asc");
+        Assert.Single(secondPage.Items);
+        Assert.Equal("c-third.txt", secondPage.Items[0].FileName);
+
+        var bySizeDescending = await ReadPageAsync(client, "?pageSize=2&sortBy=size&sortDirection=desc");
+        Assert.Equal(["c-third.txt", "b-second.txt"], bySizeDescending.Items.Select(file => file.FileName));
+
+        // Сортировка по умолчанию (createdAt desc) возвращает все файлы без дублей.
+        var allFiles = await ReadPageAsync(client, "?pageSize=100");
+        Assert.Equal(3, allFiles.Items.Count);
+        Assert.Equal(3, allFiles.Items.Select(file => file.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task FilesList_PageBeyondLast_Returns200WithEmptyItems()
+    {
+        using var client = await CreateAuthorizedClientAsync("paging-beyond");
+        await UploadAsync(client, "only.txt", "1");
+
+        var response = await client.GetAsync("/api/files?page=99&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content.ReadFromJsonAsync<PagedResult<StoredFileDto>>())!;
+        Assert.Equal(1, page.Total);
+        Assert.Empty(page.Items);
+    }
+
+    [Fact]
+    public async Task FilesList_InvalidPagingParameters_Return400WithProblemDetails()
+    {
+        using var client = await CreateAuthorizedClientAsync("paging-invalid");
+
+        string[] invalidQueries =
+        [
+            "?page=0",
+            "?pageSize=101",
+            "?sortBy=unknown",
+            "?sortDirection=sideways"
+        ];
+
+        foreach (var query in invalidQueries)
+        {
+            var response = await client.GetAsync("/api/files" + query);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        }
+    }
+
+    [Fact]
+    public async Task FilesList_DoesNotExposeInternalFields()
+    {
+        using var client = await CreateAuthorizedClientAsync("no-leak");
+        await UploadAsync(client, "secret.txt", "content");
+
+        var response = await client.GetAsync("/api/files");
+        var json = await response.Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("storageKey", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("userId", json, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -97,7 +174,9 @@ public class ApiIntegrationTests
 
         var bobList = await bob.GetAsync("/api/files");
         Assert.Equal(HttpStatusCode.OK, bobList.StatusCode);
-        Assert.Empty((await bobList.Content.ReadFromJsonAsync<List<StoredFileDto>>())!);
+        var bobFiles = await bobList.Content.ReadFromJsonAsync<PagedResult<StoredFileDto>>();
+        Assert.Empty(bobFiles!.Items);
+        Assert.Equal(0, bobFiles.Total);
 
         var bobDownload = await bob.GetAsync($"/api/files/{uploadedByAlice.Id}/download");
         Assert.Equal(HttpStatusCode.NotFound, bobDownload.StatusCode);
@@ -106,8 +185,9 @@ public class ApiIntegrationTests
         Assert.Equal(HttpStatusCode.NotFound, bobDelete.StatusCode);
 
         var aliceList = await alice.GetAsync("/api/files");
-        var aliceFiles = await aliceList.Content.ReadFromJsonAsync<List<StoredFileDto>>();
-        Assert.Single(aliceFiles!, f => f.Id == uploadedByAlice.Id);
+        var aliceFiles = await aliceList.Content.ReadFromJsonAsync<PagedResult<StoredFileDto>>();
+        Assert.Single(aliceFiles!.Items, f => f.Id == uploadedByAlice.Id);
+        Assert.Equal(1, aliceFiles.Total);
     }
 
     [Fact]
@@ -156,6 +236,14 @@ public class ApiIntegrationTests
         var token = await ReadAccessTokenAsync(loginResponse);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
+    }
+
+    private static async Task<PagedResult<StoredFileDto>> ReadPageAsync(HttpClient client, string queryString)
+    {
+        var response = await client.GetAsync("/api/files" + queryString);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<PagedResult<StoredFileDto>>())!;
     }
 
     private static async Task<StoredFileDto> UploadAsync(HttpClient client, string fileName, string content)
