@@ -8,4 +8,6 @@ public interface IStoredFileMapper
     StoredFileDto ToDto(StoredFile file);
 
     List<StoredFileDto> ToDtoList(IEnumerable<StoredFile> files);
+
+    PagedResult<StoredFileDto> ToDtoPage(PagedResult<StoredFile> page);
 }

@@ -9,7 +9,7 @@ internal sealed class FakeFileStorageService : IFileStorageService
 {
     public StoredFile? UploadResult { get; set; }
 
-    public List<StoredFile> FilesToReturn { get; set; } = [];
+    public PagedResult<StoredFile> PageResult { get; set; } = new([], 0, 1, FilesQueryParameters.DefaultPageSize);
 
     public FileDownloadResult? DownloadResult { get; set; }
 
@@ -19,6 +19,8 @@ internal sealed class FakeFileStorageService : IFileStorageService
 
     public string? LastUserId { get; private set; }
 
+    public FilesQueryParameters? LastQuery { get; private set; }
+
     public Task<StoredFile> UploadAsync(IFormFile? file, string userId, CancellationToken cancellationToken)
     {
         UploadCalls++;
@@ -26,10 +28,14 @@ internal sealed class FakeFileStorageService : IFileStorageService
         return Task.FromResult(UploadResult ?? throw new InvalidOperationException("UploadResult не задан"));
     }
 
-    public Task<List<StoredFile>> GetAllFiles(string userId, CancellationToken cancellationToken)
+    public Task<PagedResult<StoredFile>> GetFilesPageAsync(
+        string userId,
+        FilesQueryParameters query,
+        CancellationToken cancellationToken)
     {
         LastUserId = userId;
-        return Task.FromResult(FilesToReturn);
+        LastQuery = query;
+        return Task.FromResult(PageResult);
     }
 
     public Task<FileDownloadResult?> DownloadAsync(string userId, Guid id, CancellationToken cancellationToken)

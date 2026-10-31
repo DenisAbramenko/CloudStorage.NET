@@ -39,12 +39,6 @@ internal sealed class FakeStoredFileRepository : IStoredFileRepository
         return Task.FromResult((FilesToReturn, FilesToReturn.Count));
     }
 
-    public Task<List<StoredFile>> GetAllAsync(string userId, CancellationToken cancellationToken)
-    {
-        LastUserId = userId;
-        return Task.FromResult(FilesToReturn);
-    }
-
     public Task<StoredFile?> GetByIdAsync(string userId, Guid id, CancellationToken cancellationToken)
     {
         LastUserId = userId;

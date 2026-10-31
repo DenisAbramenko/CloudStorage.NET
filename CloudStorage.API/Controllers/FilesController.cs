@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using CloudStorage.API.DTOs;
 using CloudStorage.API.Services;
 using CloudStorage.API.Services.Mapping;
 using Microsoft.AspNetCore.Authorization;
@@ -38,12 +39,13 @@ public class FilesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllFiles(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllFiles([FromQuery] FilesQueryParameters query, CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
         var userId = GetCurrentUserId();
-        var files = await _fileStorageService.GetAllFiles(userId, cancellationToken);
-        var result = _storedFileMapper.ToDtoList(files);
-        return Ok(result);
+        var files = await _fileStorageService.GetFilesPageAsync(userId, query, cancellationToken);
+        return Ok(_storedFileMapper.ToDtoPage(files));
     }
 
     [HttpGet("{id:guid}/download")]

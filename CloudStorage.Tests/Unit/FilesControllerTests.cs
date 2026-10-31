@@ -146,7 +146,7 @@ public class FilesControllerTests
     {
         var controller = CreateController(CreateUser("user-42"));
 
-        var result = await controller.GetAllFiles(CancellationToken.None);
+        var result = await controller.GetAllFiles(new FilesQueryParameters(), CancellationToken.None);
 
         Assert.IsType<OkObjectResult>(result);
         Assert.Equal("user-42", _storage.LastUserId);
@@ -158,6 +158,6 @@ public class FilesControllerTests
         var controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => controller.GetAllFiles(CancellationToken.None));
+            () => controller.GetAllFiles(new FilesQueryParameters(), CancellationToken.None));
     }
 }

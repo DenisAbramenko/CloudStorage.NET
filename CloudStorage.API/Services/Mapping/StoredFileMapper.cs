@@ -25,4 +25,15 @@ public class StoredFileMapper : IStoredFileMapper
 
         return files.Select(ToDto).ToList();
     }
+
+    public PagedResult<StoredFileDto> ToDtoPage(PagedResult<StoredFile> page)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+
+        return new PagedResult<StoredFileDto>(
+            ToDtoList(page.Items),
+            page.Total,
+            page.Page,
+            page.PageSize);
+    }
 }

@@ -48,9 +48,17 @@ public class FileStorageService : IFileStorageService
         }
     }
 
-    public async Task<List<StoredFile>> GetAllFiles(string userId, CancellationToken cancellationToken)
+    public async Task<PagedResult<StoredFile>> GetFilesPageAsync(
+        string userId,
+        FilesQueryParameters query,
+        CancellationToken cancellationToken)
     {
-        return await _storedFileRepository.GetAllAsync(userId, cancellationToken);
+        ArgumentNullException.ThrowIfNull(query);
+
+        var normalized = Normalize(query);
+        var (items, total) = await _storedFileRepository.GetPageAsync(userId, normalized, cancellationToken);
+
+        return new PagedResult<StoredFile>(items, total, normalized.Page, normalized.PageSize);
     }
 
     public async Task<FileDownloadResult?> DownloadAsync(string userId, Guid id, CancellationToken cancellationToken)
@@ -76,5 +84,19 @@ public class FileStorageService : IFileStorageService
         _localFileStorage.Delete(storedFile.StorageKey);
         await _storedFileRepository.Delete(storedFile, cancellationToken);
         return true;
+    }
+
+    // Нормализация на случай прямого вызова сервиса в обход валидации контроллера.
+    private static FilesQueryParameters Normalize(FilesQueryParameters query)
+    {
+        return new FilesQueryParameters
+        {
+            Page = query.Page < 1 ? 1 : query.Page,
+            PageSize = query.PageSize is >= 1 and <= FilesQueryParameters.MaxPageSize
+                ? query.PageSize
+                : FilesQueryParameters.DefaultPageSize,
+            SortBy = query.SortBy ?? FilesQueryParameters.DefaultSortBy,
+            SortDirection = query.SortDirection ?? FilesQueryParameters.DefaultSortDirection
+        };
     }
 }

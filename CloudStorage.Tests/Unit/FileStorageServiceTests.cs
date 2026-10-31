@@ -1,3 +1,4 @@
+using CloudStorage.API.DTOs;
 using CloudStorage.API.Models;
 using CloudStorage.API.Services;
 using CloudStorage.Tests.Unit.Fakes;
@@ -180,13 +181,16 @@ public class FileStorageServiceTests
     }
 
     [Fact]
-    public async Task GetAllFiles_PassesUserIdToRepository()
+    public async Task GetFilesPageAsync_PassesUserIdAndQueryToRepository()
     {
         _repository.FilesToReturn = [CreateStoredFile()];
 
-        var files = await _sut.GetAllFiles("user-1", CancellationToken.None);
+        var page = await _sut.GetFilesPageAsync("user-1", new FilesQueryParameters(), CancellationToken.None);
 
-        Assert.Single(files);
+        Assert.Single(page.Items);
+        Assert.Equal(1, page.Total);
         Assert.Equal("user-1", _repository.LastUserId);
+        Assert.Equal(1, _repository.LastQuery!.Page);
+        Assert.Equal(FilesQueryParameters.DefaultPageSize, _repository.LastQuery.PageSize);
     }
 }

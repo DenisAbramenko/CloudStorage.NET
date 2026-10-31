@@ -37,16 +37,6 @@ public class StoredFileRepository : IStoredFileRepository
         return (items, total);
     }
 
-    // Временно, до перевода сервиса на GetPageAsync (шаг 3).
-    public async Task<List<StoredFile>> GetAllAsync(string userId, CancellationToken cancellationToken)
-    {
-        var (items, _) = await GetPageAsync(
-            userId,
-            new FilesQueryParameters { Page = 1, PageSize = int.MaxValue },
-            cancellationToken);
-        return items;
-    }
-
     public async Task<StoredFile?> GetByIdAsync(string userId, Guid id, CancellationToken cancellationToken)
     {
         return await _dbContext.StoredFiles
