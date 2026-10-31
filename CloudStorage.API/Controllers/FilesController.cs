@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using CloudStorage.API.DTOs;
+using CloudStorage.API.Errors;
 using CloudStorage.API.Services;
 using CloudStorage.API.Services.Mapping;
 using Microsoft.AspNetCore.Authorization;
@@ -74,6 +75,6 @@ public class FilesController : ControllerBase
     private string GetCurrentUserId()
     {
         return User.FindFirstValue(ClaimTypes.NameIdentifier)
-               ?? throw new UnauthorizedAccessException("Claim user ID is missing.");
+               ?? throw new MissingUserIdClaimException();
     }
 }

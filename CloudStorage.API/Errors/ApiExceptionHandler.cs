@@ -44,7 +44,7 @@ public class ApiExceptionHandler(IProblemDetailsService problemDetailsService, I
         {
             FileNotFoundException or KeyNotFoundException =>
                 (StatusCodes.Status404NotFound, "Not Found", "Запрошенный файл не найден."),
-            UnauthorizedAccessException =>
+            MissingUserIdClaimException =>
                 (StatusCodes.Status401Unauthorized, "Unauthorized", "Не удалось определить пользователя по токену."),
             BadHttpRequestException =>
                 (StatusCodes.Status400BadRequest, "Bad Request", "Некорректный запрос."),
