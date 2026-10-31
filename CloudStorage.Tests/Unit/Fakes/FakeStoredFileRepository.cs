@@ -1,4 +1,5 @@
-﻿using CloudStorage.API.Models;
+﻿using CloudStorage.API.DTOs;
+using CloudStorage.API.Models;
 using CloudStorage.API.Repositories;
 
 namespace CloudStorage.Tests.Unit.Fakes;
@@ -19,11 +20,23 @@ internal sealed class FakeStoredFileRepository : IStoredFileRepository
 
     public Guid? LastId { get; private set; }
 
+    public FilesQueryParameters? LastQuery { get; private set; }
+
     public Task AddAsync(StoredFile file, CancellationToken cancellationToken)
     {
         AddCalls++;
         if (AddException is not null) throw AddException;
         return Task.CompletedTask;
+    }
+
+    public Task<(List<StoredFile> Items, int Total)> GetPageAsync(
+        string userId,
+        FilesQueryParameters query,
+        CancellationToken cancellationToken)
+    {
+        LastUserId = userId;
+        LastQuery = query;
+        return Task.FromResult((FilesToReturn, FilesToReturn.Count));
     }
 
     public Task<List<StoredFile>> GetAllAsync(string userId, CancellationToken cancellationToken)
