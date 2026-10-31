@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Security.Claims;
 using CloudStorage.API.Controllers;
 using CloudStorage.API.DTOs;
+using CloudStorage.API.Errors;
 using CloudStorage.API.Models;
 using CloudStorage.API.Services.Mapping;
 using CloudStorage.Tests.Unit.Fakes;
@@ -220,11 +221,12 @@ public class FilesControllerTests
     }
 
     [Fact]
-    public async Task GetAllFiles_WithoutUserIdClaim_ThrowsUnauthorizedAccessException()
+    public async Task GetAllFiles_WithoutUserIdClaim_ThrowsMissingUserIdClaimException()
     {
         var controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        await Assert.ThrowsAsync<MissingUserIdClaimException>(
             () => controller.GetAllFiles(new FilesQueryParameters(), CancellationToken.None));
+        Assert.Null(_storage.LastUserId);
     }
 }
