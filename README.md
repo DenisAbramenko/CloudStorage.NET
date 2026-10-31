@@ -108,7 +108,7 @@ API слушает `http://localhost:8080`. Внутри сети Compose API п
 |---|---|---|---|---|
 | POST | `/api/auth/register` | анонимно | Регистрация по email и паролю | `200`, `400` |
 | POST | `/api/auth/login` | анонимно | Вход, возвращает JWT | `200`, `400`, `401` |
-| GET | `/api/files` | JWT | Список файлов текущего пользователя | `200`, `401` |
+| GET | `/api/files` | JWT | Список файлов текущего пользователя с пагинацией и сортировкой | `200`, `400`, `401` |
 | POST | `/api/files` | JWT | Загрузка файла, поле формы `file`, до 100 МБ | `201`, `400`, `401`, `413` |
 | GET | `/api/files/{id}/download` | JWT | Скачивание своего файла | `200`, `401`, `404` |
 | DELETE | `/api/files/{id}` | JWT | Удаление своего файла | `204`, `401`, `404` |
@@ -181,10 +181,52 @@ curl -X POST http://localhost:8080/api/files \
 }
 ```
 
+### Список файлов
+
+```bash
+curl "http://localhost:8080/api/files?page=1&pageSize=2&sortBy=name&sortDirection=asc" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Параметры запроса (все необязательные):
+
+| Параметр | По умолчанию | Допустимые значения |
+|---|---|---|
+| `page` | `1` | целое число, не меньше 1 |
+| `pageSize` | `20` | от 1 до 100 |
+| `sortBy` | `createdAt` | `createdAt`, `name`, `size` |
+| `sortDirection` | `desc` | `asc`, `desc` |
+
+Ответ — объект со страницей файлов и общим количеством:
+
+```json
+{
+  "items": [
+    {
+      "id": "0f0c8a2e-6c1d-4a3e-9f0b-7f1f0b8c7a11",
+      "fileName": "report.pdf",
+      "contentType": "application/pdf",
+      "size": 24576,
+      "createdAtUtc": "2026-10-28T20:15:03.421Z"
+    }
+  ],
+  "total": 3,
+  "page": 1,
+  "pageSize": 2,
+  "totalPages": 2
+}
+```
+
+Особенности:
+
+- Номер страницы за последней возвращает `200` с пустым `items` и корректным `total`.
+- Невалидные значения (`page=0`, `pageSize=101`, неизвестный `sortBy`/`sortDirection`) дают `400` в формате `ProblemDetails`.
+- При равных значениях ключа сортировки порядок детерминирован (дополнительно сортируется по `id`).
+- Сортировка по `name` использует коллацию PostgreSQL, поэтому по умолчанию она регистрозависимая.
+
 ### Остальные операции
 
 ```bash
-curl http://localhost:8080/api/files -H "Authorization: Bearer $TOKEN"
 curl -OJ http://localhost:8080/api/files/<id>/download -H "Authorization: Bearer $TOKEN"
 curl -X DELETE http://localhost:8080/api/files/<id> -H "Authorization: Bearer $TOKEN" -i
 ```
@@ -213,7 +255,7 @@ dotnet test CloudStorage.Tests\CloudStorage.Tests.csproj --filter FullyQualified
 - Нет refresh-токенов: `Jwt:RefreshTokenExpirationDays` есть в конфигурации, но логики обновления нет — access-токен живёт 15 минут.
 - Нет подтверждения email, восстановления пароля, смены пароля и rate limiting на вход.
 - Лимит 100 МБ задан атрибутом `[RequestSizeLimit]`; в бизнес-логике проверки размера нет, пустой файл проверяется в контроллере.
-- Нет пагинации и сортировки в `GET /api/files` — возвращается весь список.
+- Нет поиска по имени файла: `GET /api/files` поддерживает только пагинацию и сортировку.
 - Файлы хранятся на локальном диске; нет S3-совместимого хранилища, шифрования и проверки содержимого.
 - У `StoredFiles.UserId` нет индекса и внешнего ключа; удаление файла с диска выполняется до удаления записи из БД.
 - Миграции не применяются автоматически при старте; HTTPS-редирект в контейнере не работает (нужен reverse proxy).
@@ -222,7 +264,7 @@ dotnet test CloudStorage.Tests\CloudStorage.Tests.csproj --filter FullyQualified
 
 - Выделить слой `Application`: перенести проверки файла и сценарии из контроллера/сервиса, убрать `IFormFile` из бизнес-логики.
 - Refresh-токены и отзыв сессий, ограничение частоты запросов.
-- Пагинация, поиск и сортировка списка файлов.
+- Поиск по имени файла, фильтры и курсорная пагинация.
 - Хранилище за интерфейсом `ILocalFileStorage` → реализация для S3/MinIO.
 - Индексы и внешние ключи, транзакционная согласованность файла и записи.
 - CI с unit- и интеграционными тестами, автоматические миграции, health-проверки API.
