@@ -9,6 +9,8 @@ public sealed class ApiFixture : IAsyncLifetime
 {
     private ApiFactory _factory = null!;
 
+    public IServiceProvider Services => _factory.Services;
+
     public HttpClient CreateClient()
     {
         return _factory.CreateClient();

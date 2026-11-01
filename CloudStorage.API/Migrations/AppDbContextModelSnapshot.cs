@@ -119,6 +119,8 @@ namespace CloudStorage.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId", "CreatedAtUtc", "Id");
+
                     b.ToTable("StoredFiles");
                 });
 
@@ -252,6 +254,15 @@ namespace CloudStorage.API.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("CloudStorage.API.Models.StoredFile", b =>
+                {
+                    b.HasOne("CloudStorage.API.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
