@@ -33,6 +33,10 @@ coverage.*
 *.user
 *.suo
 
+# Local planning
+
+PLAN.md
+
 # Logs
 
 *.log
